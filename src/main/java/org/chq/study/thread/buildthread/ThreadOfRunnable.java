@@ -27,6 +27,6 @@ public class ThreadOfRunnable implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("继承runnable接口创建的线程");
+        System.out.println(Thread.currentThread().getName()+"继承runnable接口创建的线程");
     }
 }
