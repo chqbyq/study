@@ -3,11 +3,13 @@ package org.chq.study.thread.threadpool;
 import org.chq.study.thread.buildthread.ThreadOfCallable;
 import org.chq.study.thread.buildthread.ThreadOfExtends;
 import org.chq.study.thread.buildthread.ThreadOfRunnable;
+import org.chq.study.thread.threadpool.common.CommonSynz;
 
 import javax.sound.midi.Soundbank;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @Description: TODO
@@ -16,7 +18,10 @@ import java.util.concurrent.*;
  * @CreateDate: 2019/9/20 9:05
  */
 public class TestThreadPool {
-    static ExecutorService fixPool = Executors.newFixedThreadPool(2,new ThreadFactoryImpl("chq"));
+    static ExecutorService fixPool = Executors.newFixedThreadPool(10,new ThreadFactoryImpl("chq"));
+
+    /** 记载爬虫成功次数 */
+    private static AtomicInteger sucCount = new AtomicInteger(0);
 
     public static class MyTask implements Runnable{
         private int taskNum;
@@ -41,18 +46,18 @@ public class TestThreadPool {
     }
     public static void main(String[] args) {
 //        testSubmitReturnFuture();
-        testFixPool();
+//        testFixPool();
 //        testMyExcutor();
 //        testScheduled();
+//        testSynz();
+        test2ThreadPool();
     }
     /**
-     * 测试submit方法返回future所能接受的参数：
-     * 以及作用
+     *  测试submit方法返回future所能接受的参数:
+     *  以及作用
      *
      * @param
      * @return void
-     * @author chq
-     * @date 2019/9/20 9:38
      */
     public static void testSubmitReturnFuture(){
         fixPool.submit(()-> {
@@ -91,19 +96,13 @@ public class TestThreadPool {
      */
     public static void testFixPool(){
          // 创建实现了Runnable接口对象，Thread对象当然也实现了Runnable接口
-         Thread t1 = new ThreadOfExtends();
-         Thread t2 = new ThreadOfExtends();
-         Thread t3 = new ThreadOfExtends();
-         Thread t4 = new ThreadOfExtends();
-         Thread t5 = new ThreadOfExtends();
-         // 将线程放入池中进行执行
-         fixPool.execute(t1);
-         fixPool.execute(t2);
-         fixPool.execute(t3);
-         fixPool.execute(t4);
-         fixPool.execute(t5);
-
-         for(int i = 0; i <= 5; i++){
+        for (int i = 0; i < 10; i++){
+            Thread thread = new ThreadOfExtends();
+            // 将线程放入池中进行执行
+            fixPool.execute(thread);
+//            System.out.println("线程池中线程数目："+fixPool.getPoolSize());
+        }
+         for(int i = 0; i <= 10; i++){
              fixPool.execute(()-> System.out.println(Thread.currentThread().getName()+"testFixPool"));
          }
          // 关闭线程池
@@ -129,6 +128,38 @@ public class TestThreadPool {
         System.out.println("testScheduled-scheduleWithFixedDelay 开始执行时间:" +
                 DateFormat.getTimeInstance().format(new Date()));
         service.scheduleWithFixedDelay(new MyTask(),3L,2L,TimeUnit.SECONDS);
+    }
+
+
+    public static void testSynz(){
+        for(int i = 0; i < 100; i++){
+            fixPool.execute(()->{
+                CommonSynz commonSynz = new CommonSynz();
+                commonSynz.synzTest();
+                sucCount.getAndIncrement();
+                if (sucCount.get() % 10 == 0){
+
+                }
+
+            });
+        }
+
+    }
+
+    public static void test2ThreadPool(){
+        fixPool.execute(()->{
+            System.out.println(Thread.currentThread().getName()+"任务1");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        fixPool.execute(()->{
+            System.out.println(Thread.currentThread().getName()+"任务2");
+        });
+        System.out.println(Thread.currentThread().getName()+"主任务");
+//        fixPool.shutdownNow();
     }
 
 }
